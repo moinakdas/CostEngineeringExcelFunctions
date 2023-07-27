@@ -158,7 +158,7 @@ Function BECalc(Etype As String)
     Dim myList() As Variant
     
     myList = Array("Mechanical", "Electrical", "Comms", "Track", "Traction Power", "Signals", "CMS")
-    'myList = Array("Signals") 'Debug Tool Only
+    'myList = Array("Mechanical", "Electrical", "Comms", "Track", "Traction Power") 'Debug Tool Only
     
     Dim ws As Worksheet
     Dim columnRange As Range
@@ -167,6 +167,7 @@ Function BECalc(Etype As String)
     Dim VendorCol As Integer
     Dim CostCol As Integer
     Dim cell As Range
+
     TotalM = 0
     On Error Resume Next
     For Each sheetName In myList
@@ -175,6 +176,10 @@ Function BECalc(Etype As String)
             ' If the sheet does not exist, skip to the next iteration
             GoTo ContinueLoop
         End If
+        
+        ReqCol = 0
+        VendorCol = 0
+        CostCol = 0
         
         Set row2Range = ws.Range("A2:Z2")
         'find column for Req #
@@ -196,7 +201,7 @@ Function BECalc(Etype As String)
         'MsgBox CostCol
         'ReqCol & VendorCol is set correctly at this point
         
-        If ReqCol > 0 And VendorCol > 0 Then
+        If ReqCol > 0 And VendorCol > 0 And CostCol > 0 Then
             ' Create column range based on ReqCol
             Set columnRange = ws.Columns(ReqCol)
             'MsgBox columnRange
@@ -208,6 +213,7 @@ Function BECalc(Etype As String)
                     ' Access the cell on the same row but in the VendorCol column using Offset
                     Dim vendorCell As Range
                     Set vendorCell = cell.Offset(0, VendorCol - ReqCol)
+                    'MsgBox sheetName & " " & vendorCell.Value & " " & cell.Value
                     If InStr(1, vendorCell.Value, Etype, vbTextCompare) > 0 Then 'If substring is recognized
                         Dim CostCell As Range
                         Set CostCell = cell.Offset(0, CostCol - ReqCol) 'Retrieve info from Cost cell on same line item
