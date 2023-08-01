@@ -21,25 +21,41 @@ Function FindTotalDelta(sheetName As String)
     Dim totalCount As Single      'variable to store the current calculated value for total delta, updating during for loop
     Dim callingRow As Long        'variable to store the row from which the function is called
     
-    ''VARIABLE INITIALIZATION ----------------------------------------------------------------------------------------------------
-    totalCount = 0                'set current pointer to zero, this value will update during for loop
-    Set ws = ThisWorkbook.Worksheets(sheetName) 'set sheet as the input value, so that the script searches through that sheet
-    Set columnRange = ws.Range("H1:H" & ws.Cells(ws.Rows.Count, 1).End(xlUp).Row) 'Set the range of values for the for loop as the
-                                                                                  'cost code column starting from the top and ending
-                                                                                  'at the last populated row. The for loop will actually
-                                                                                  'stop at the callingRow using an if-exit (break) statement
+    Dim CostCol As Integer        'within outer for loop, store the "Cost Code" column number for the current sheet
+    Dim TotalCostCol As Integer   'within outer for loop, store the "Total Cost" column number for the current sheet
     
-    callingRow = Application.Caller.Row 'record the callingRow as the row in which the function is called on
-    Set stopCell = ws.Cells(callingRow + 1, "H") 'set the stopCell (end index of for loop) as the row below where the function is being called
-    hValue = stopCell.Offset(-1, 0).Value 'Set hValue as the cost code located on the current row
+    ''VARIABLE INITIALIZATION ----------------------------------------------------------------------------------------------------
+    totalCount = 0                              'set current pointer to zero, this value will update during for loop
+    Set ws = ThisWorkbook.Worksheets(sheetName) 'set sheet as the input value, so that the script searches through that sheet
+    CostCol = 0                                 'Set "Cost Code" column number as zero (to be updated in first for loop)
+    TotalCostCol = 0                            'Set "Total Cost" column number as zero (to be updated in first for loop)
+          
     On Error Resume Next
+    
+    ''FIND COST CODE COLUMN AND TOTAL COST COLUMN IN SPREADSHEET -----------------------------------------------------------------------
+    Set row2Range = ws.Range("A2:Z2") 'set the range as the second row from columns A through Z.
+    On Error Resume Next
+    'The for loop iterates cell by cell along the row
+    For Each cell2 In row2Range
+        'if the current cell equals the string "Cost Code", save the column index
+        If cell2.Value = "Cost Code" Then
+            CostCol = cell2.Column
+        End If
+        'if the current cell equals the string "Total Cost", save the column index
+        If cell2.Value = "Total Cost" Then
+            TotalCostCol = cell2.Column
+        End If
+        'if every value has been assigned, exit the loop early
+        If CostCol > 0 And TotalCostCol > 0 Then
+            Exit For
+        End If
+    Next cell2
+    
+    Set columnRange = ws.Range(ws.Cells(3, CostCol), ws.Cells(Application.Caller.Row, CostCol)) 'set range as the cost code column until the last populated cell
+    hValue = ws.Cells(Application.Caller.Row, CostCol).Value 'Set hValue as the cost code located on the current row
     
     ''MAIN FOR LOOP ---------------------------------------------------------------------------------------------------------------
     For Each cell In columnRange 'Iterate cell by cell in the cost code column
-    
-        If cell.Address = stopCell.Address Then   '''''''''''''''''''''''''''''''''''''''''''''
-            Exit For                              ' Exit the loop when the stop cell is reached
-        End If                                    '''''''''''''''''''''''''''''''''''''''''''''
         
         If IsEmpty(cell) Then  ''''''''''''''''''''''''''''''''''''''''
             GoTo ContinueLoop  'Continue even if current cell is empty
@@ -72,6 +88,9 @@ Function TotalSpent(COST_CODE As String) As Double
     Dim columnRange As Range 'store range for inner for loop
     Dim cell As Range 'within inner for loop, store current cell
     
+    Dim CostCol As Integer     'within outer for loop, store the "Cost Code" column number for the current sheet
+    Dim TotalCostCol As Integer     'within outer for loop, store the "Total Cost" column number for the current sheet
+    
     ''VARIABLE INITIALIZATION
     myList = Array("Mechanical", "Electrical", "Comms", "Track", "Traction Power", "Signals", "CMS") 'stores name of all sheets to look through
                                                                                                      'NEEDS TO BE UPDATED WHEN SHEETS ARE ADDED
@@ -87,9 +106,33 @@ Function TotalSpent(COST_CODE As String) As Double
             GoTo ContinueLoop
         End If
         
-        Set columnRange = ws.Range("H1:H" & ws.Cells(ws.Rows.Count, 1).End(xlUp).Row) 'set range as the cost code column until the last populated cell
+        CostCol = 0
+        TotalCostCol = 0
+                
+        ''FIND COST CODE COLUMN AND TOTAL COST COLUMN IN SPREADSHEET
+        Set row2Range = ws.Range("A2:Z2") 'set the range as the second row from columns A through Z.
+        On Error Resume Next
+        'The for loop iterates cell by cell along the row
+        For Each cell2 In row2Range
+            'if the current cell equals the string "Cost Code", save the column index
+            If cell2.Value = "Cost Code" Then
+                CostCol = cell2.Column
+            End If
+            'if the current cell equals the string "Total Cost", save the column index
+            If cell2.Value = "Total Cost" Then
+                TotalCostCol = cell2.Column
+            End If
+            'if every value has been assigned, exit the loop early
+            If CostCol > 0 And TotalCostCol > 0 Then
+                Exit For
+            End If
+        Next cell2
         
-        ''INNER FOR LOOP - iterates cell by cell
+        lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+        
+        Set columnRange = ws.Range(ws.Cells(3, CostCol), ws.Cells(lastRow, CostCol)) 'set range as the cost code column until the last populated cell
+        
+        ''INNER FOR LOOP - iterates cell by cell and updates totalCount
         For Each cell In columnRange
             'MsgBox sheetName & " " & cell.Value & " " & totalCount 'debug purposes only
             
@@ -103,7 +146,7 @@ Function TotalSpent(COST_CODE As String) As Double
             End If
             
             If cell.Value = COST_CODE Then                        'if the specified cost code is found, then
-                totalCount = totalCount + ws.Cells(cell.Row, "E") 'add the money spent on the line item to totalCost
+                totalCount = totalCount + ws.Cells(cell.Row, TotalCostCol) 'add the money spent on the line item to totalCost
             End If                                                '''''''''''''''''''''''''''''''''''''''''''''''''''
             
 ContinueCellLoop: 'continue inner loop, move to next cell
@@ -134,6 +177,8 @@ Function ProcurementPercentage(sheetName As String)
     
     ''FIND REQ # COLUMN
     Set row2Range = ws.Range("A2:Z2") 'set the range as the second row from columns A through Z.
+    
+    On Error Resume Next
     'The for loop iterates cell by cell along the row
     For Each cell2 In row2Range
         
@@ -172,65 +217,68 @@ ContinueLoop: 'continue the for loop, move to the next cell
                                                       'items: (lastRow - 2 - notProcured). This is then divided by the total items (lastRow - 2) to provide
                                                       'a percentage and then assign it to the ans variable
                                                       
-    ProcurementPercentage = Round(ans, 2)
+    ProcurementPercentage = ans
 End Function
 
 'DeliveryPercentage takes a sheet as input, and then returns the percentage of delivered items (delivered items/total items)
 'Works almost exactly like the ProcurementPercentage function
 Function DeliveryPercentage(sheetName As String)
-    ''VARIABLE DECLARATION
-    Dim ws As Worksheet              'store the worksheet object corresponding to the sheetName input
-    Dim columnRange As Range         'store the column range for the for loop
-    Dim lastRow                      'store the last populated row of the "items" column
-    Dim ans As Double                'store the return value (decimal)
-    Dim notDelivered As Single       'store the number of not delivered items (updated through for loop)
-    Dim DeliveryCol As Integer      'within first for loop, store the "Delivery Date # 1" column number for the current sheet
-    
+   ''VARIABLE DECLARATION
+    Dim ws As Worksheet            'store the worksheet object corresponding to the sheetName input
+    Dim columnRange As Range       'store the column range for the for loop
+    Dim lastRow                    'store the last populated row of the "items" column
+    Dim ans As Double              'store the return value (decimal)
+    Dim notProcured As Single      'store the number of not procured items (updated through for loop)
+    Dim ReqCol As Integer      'within first for loop, store the "Req #" column number for the current sheet
+
     ''VARIABLE INITIALIZATION
     Set ws = ThisWorkbook.Worksheets(sheetName)           'set worksheet object to specified worksheet
     lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row  'set lastRow equal to last populated row of items column
-    notDelivered = 0                                      'set number of not procured items to zero
-    DeliveryCol = 0                                       'set "Delivery Date # 1" column number to zero
+    notProcured = 0                                       'set number of not procured items to zero
+    ReqCol = 0                                            'set Req # column number to zero
     
-    ''FIND DELIVERY DATE # 1 COLUMN
+    
+    ''FIND REQ # COLUMN
     Set row2Range = ws.Range("A2:Z2") 'set the range as the second row from columns A through Z.
+    On Error Resume Next
     'The for loop iterates cell by cell along the row
     For Each cell2 In row2Range
-        
-        'if the current cell equals the string "Delivery Date # 1", save the column index
-        If cell2.Value = "Delivery Date # 1" Then
-            DeliveryCol = cell2.Column
-            MsgBox DeliveryCol
+        'if the current cell equals the string "Req #", save the column index
+        If cell2.Value = "Delivery Date # 1" Or cell2.Value = "Delivery Date #1" Then
+            ReqCol = cell2.Column
         End If
-        
         'if every value has been assigned, exit the loop early
-        If DeliveryCol > 0 Then
+        If ReqCol > 0 Then
             Exit For
         End If
     Next cell2
     
-    Set columnRange = ws.Range(ws.Cells(3, DeliveryCol), ws.Cells(lastRow, DeliveryCol)) 'set columnRange as "Delivery Date # 1" from top of table to last row
-    ''FOR LOOP, iterates cell by cell through "Delivery Date # 1" column
+    Set columnRange = ws.Range(ws.Cells(3, ReqCol), ws.Cells(lastRow, ReqCol))          'set columnRange as "Req #" from top of table to last row
+    
+    ''FOR LOOP, iterates cell by cell through "Req #" column
     For Each cell In columnRange
+        'MsgBox cell.Value & " " & notProcured
         If Err.Number <> 0 Then ''''''''''''''''''''''''''''''''''''''
             Err.Clear           'If there's an error, ignore it
             Resume Next         ''''''''''''''''''''''''''''''''''''''
         End If                  ''''''''''''''''''''''''''''''''''''''
         
-        If IsEmpty(cell) Then              ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-            notDelivered = notDelivered + 1  'If cell is empty, item is not procured, add one to not procured count
-        End If                             ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+        If IsEmpty(cell) Then             ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+            notProcured = notProcured + 1 'If cell is empty, item is not procured, add one to not procured count
+        End If                            ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
         
 ContinueLoop: 'continue the for loop, move to the next cell
     Next cell
     
-    MsgBox DeliveryCol & " " & notDelivered & " " & lastRow 'debug purposes only
-    ans = (lastRow - 2 - notDelivered) / (lastRow - 2) 'calculate answer, lastRow stores the row number of the last populated cell in the items column
+    'MsgBox sheetName & " " & lastRow & " " & notProcured
+    ''RETURN STATEMENT
+    ans = (lastRow - 2 - notProcured) / (lastRow - 2) 'calculate answer, lastRow stores the row number of the last populated cell in the items column
                                                       'then subtracting two accounts for the empty row and the column title row. lastRow - 2 is equivalent
                                                       'to the total number of items. Subtracting notProcured from this value yields the number of procured
                                                       'items: (lastRow - 2 - notProcured). This is then divided by the total items (lastRow - 2) to provide
                                                       'a percentage and then assign it to the ans variable
-    DeliveryPercentage = Round(ans, 2)
+    
+    DeliveryPercentage = ans
 End Function
 
 'BECalc takes a disadvantaged business type as input, currently limited to {"MBE","WBE","SDVOB"}, and returns the total money spent on that business type
