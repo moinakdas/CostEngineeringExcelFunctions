@@ -16,7 +16,7 @@ The Cost Engineering Library is a powerful Excel-based tool developed during my 
 
 ## Usage
 
-To use the Cost Engineering Library, you can import the VBA code provided in the `CostFnctions.vba` file into your Excel project. Once imported, you can call any of the functions mentioned above within your Excel worksheets or macros to perform various cost-related calculations.
+To use the Cost Engineering Library, you can import the VBA code provided in the `CostFunctions.vba` file into your Excel project. Once imported, you can call any of the functions mentioned above within your Excel worksheets or macros to perform various cost-related calculations.
 
 Please note that this library was specifically designed for analyzing cost data from contract S-48012 at TC Electric. You may need to customize the library to fit the data structure and requirements of your specific projects.
 
