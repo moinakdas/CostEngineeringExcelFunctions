@@ -295,7 +295,8 @@ Function BECalc(Etype As String)
     Dim cell As Range          'store current cell within inner for loop
     
     ''VARIABLE INITIALIZATION
-    myList = Array("Mechanical", "Electrical", "Comms", "Track", "Traction Power", "Signals", "CMS")
+    myList = Array("Mechanical", "Electrical", "Comms", "Track", "Traction Power", "Signals", "CMS") 'stores name of all sheets to look through
+                                                                                                     'NEEDS TO BE UPDATED WHEN SHEETS ARE ADDED
     TotalM = 0
     
     On Error Resume Next
