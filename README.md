@@ -30,4 +30,4 @@ Contributions to this project are welcome! If you find any issues or have sugges
 
 ## Contact
 
-For any questions or inquiries related to this library, you can reach me at [Moinak.Das@Stonybrook.com](mailto:Moinak.Das@Stonybrook.com).
+For any questions or inquiries related to this library, you can reach me at [Moinak.Das@Stonybrook.com](mailto:Moinak.Das@Stonybrook.edu).
