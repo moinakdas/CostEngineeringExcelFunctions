@@ -1,6 +1,6 @@
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-' This script holds functions used in the procurement log spreadsheet. Any new contributors to this code must add their name and a
-' point of contact. Anytime code is updated, record the date and contributor name on the last line of this comment block.
+' This script holds functions used in the procurement log spreadsheet.
+' Anytime code is updated, record the date and contributor name on the last line of this comment block.
 '
 ' Contributors:
 ' Moinak Das | Moinak.Das@stonybrook.edu
@@ -67,7 +67,7 @@ Function FindTotalDelta(sheetName As String)
         End If                  '''''''''''''''''''''''''''''''''''''
         
         If cell.Value = hValue Then                           '''''''''''''''''''''''''''''''''''''''''''''''''''''''
-            totalCount = totalCount + ws.Cells(cell.Row, "E") 'if the current cell is equivalent to the cost code,
+            totalCount = totalCount + ws.Cells(cell.Row, TotalCostCol) 'if the current cell is equivalent to the cost code,
                                                               ' add the total cost of that entry to totalCost
         End If                                                ''''''''''''''''''''''''''''''''''''''''''''''''''''''''
         
@@ -228,13 +228,16 @@ Function DeliveryPercentage(sheetName As String)
     Dim columnRange As Range       'store the column range for the for loop
     Dim lastRow                    'store the last populated row of the "items" column
     Dim ans As Double              'store the return value (decimal)
-    Dim notProcured As Single      'store the number of not procured items (updated through for loop)
+    Dim numRec As Single      'store the number of items with a Req #
+    Dim numDel As Single      'store the number of items with a delivery date (delivered items)
     Dim ReqCol As Integer      'within first for loop, store the "Req #" column number for the current sheet
+    Dim DelDate As Integer     'within first for loop, store the "Delivery Date" column (or similar) for the current sheet
 
     ''VARIABLE INITIALIZATION
     Set ws = ThisWorkbook.Worksheets(sheetName)           'set worksheet object to specified worksheet
     lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row  'set lastRow equal to last populated row of items column
-    notProcured = 0                                       'set number of not procured items to zero
+    numRec = 0                                            'set number of requested items to zero
+    numDel = 0                                            'set number of delivered items to zero
     ReqCol = 0                                            'set Req # column number to zero
     
     
@@ -244,14 +247,18 @@ Function DeliveryPercentage(sheetName As String)
     'The for loop iterates cell by cell along the row
     For Each cell2 In row2Range
         'if the current cell equals the string "Req #", save the column index
-        If cell2.Value = "Delivery Date # 1" Or cell2.Value = "Delivery Date #1" Then
+        If cell2.Value = "Delivery Date # 1" Or cell2.Value = "Delivery Date #1" Or cell2.Value = "Delivery Date" Then
+            DelDate = cell2.Column
+        End If
+        If cell2.Value = "Req #" Then
             ReqCol = cell2.Column
         End If
         'if every value has been assigned, exit the loop early
-        If ReqCol > 0 Then
+        If ReqCol > 0 And DelDate > 0 Then
             Exit For
         End If
     Next cell2
+    
     
     Set columnRange = ws.Range(ws.Cells(3, ReqCol), ws.Cells(lastRow, ReqCol))          'set columnRange as "Req #" from top of table to last row
     
@@ -263,20 +270,20 @@ Function DeliveryPercentage(sheetName As String)
             Resume Next         ''''''''''''''''''''''''''''''''''''''
         End If                  ''''''''''''''''''''''''''''''''''''''
         
-        If IsEmpty(cell) Then             ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-            notProcured = notProcured + 1 'If cell is empty, item is not procured, add one to not procured count
-        End If                            ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+        If Not (IsEmpty(cell)) Then            ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+            numRec = numRec + 1                'If cell is not empty, item not procured, add one to requested count
+            If Not (IsEmpty(ws.Cells(cell.Row, DelDate))) Then
+                numDel = numDel + 1
+            End If
+        End If
         
 ContinueLoop: 'continue the for loop, move to the next cell
     Next cell
     
-    'MsgBox sheetName & " " & lastRow & " " & notProcured
+    
+    ''MsgBox sheetName & " " & numRec & " " & numDel
     ''RETURN STATEMENT
-    ans = (lastRow - 2 - notProcured) / (lastRow - 2) 'calculate answer, lastRow stores the row number of the last populated cell in the items column
-                                                      'then subtracting two accounts for the empty row and the column title row. lastRow - 2 is equivalent
-                                                      'to the total number of items. Subtracting notProcured from this value yields the number of procured
-                                                      'items: (lastRow - 2 - notProcured). This is then divided by the total items (lastRow - 2) to provide
-                                                      'a percentage and then assign it to the ans variable
+    ans = numDel / numRec 'calculate answer
     
     DeliveryPercentage = ans
 End Function
@@ -295,8 +302,7 @@ Function BECalc(Etype As String)
     Dim cell As Range          'store current cell within inner for loop
     
     ''VARIABLE INITIALIZATION
-    myList = Array("Mechanical", "Electrical", "Comms", "Track", "Traction Power", "Signals", "CMS") 'stores name of all sheets to look through
-                                                                                                     'NEEDS TO BE UPDATED WHEN SHEETS ARE ADDED
+    myList = Array("Mechanical", "Electrical", "Comms", "Track", "Traction Power", "Signals", "CMS")
     TotalM = 0
     
     On Error Resume Next
