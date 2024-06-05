@@ -283,9 +283,12 @@ ContinueLoop: 'continue the for loop, move to the next cell
     
     ''MsgBox sheetName & " " & numRec & " " & numDel
     ''RETURN STATEMENT
-    ans = numDel / numRec 'calculate answer
-    
-    DeliveryPercentage = ans
+    If numRec = 0 Then
+        DeliveryPercentage = 0
+    Else
+        ans = numDel / numRec 'calculate answer
+        DeliveryPercentage = ans
+    End If
 End Function
 
 'BECalc takes a disadvantaged business type as input, currently limited to {"MBE","WBE","SDVOB"}, and returns the total money spent on that business type
