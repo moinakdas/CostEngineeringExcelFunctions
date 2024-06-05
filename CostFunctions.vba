@@ -283,10 +283,12 @@ ContinueLoop: 'continue the for loop, move to the next cell
     
     ''MsgBox sheetName & " " & numRec & " " & numDel
     ''RETURN STATEMENT
-    If numRec = 0 Then
+    'Note that under the current structure, the if statement below may also be taken with
+    'respect to procured items instead of total items (lastrow - 2)
+    If lastRow < 2 Then
         DeliveryPercentage = 0
     Else
-        ans = numDel / numRec 'calculate answer
+        ans = numDel / (lastRow - 2) 'calculate answer
         DeliveryPercentage = ans
     End If
 End Function
